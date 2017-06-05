@@ -1,3 +1,4 @@
-./imm_face_db
-./build
-*.dylib
+imm_face_db/
+build/
+bin/
+.DS_Store
