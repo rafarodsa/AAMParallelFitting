@@ -26,11 +26,11 @@ public:
 public:
 
   bool Fit(const IplImage* image, int max_iter = 30, bool showprocess = false);
-  void Read(const string& filename);
+  void Read(const std::string& filename);
 
 private:
   void ComputeEstimationError();
-  void ComputeShape();
+  void ComputeModelledShape(IplImage* image);
   void ComputeModelledTexture();
   void SampleTexture();
   void NormalizingTexture();
@@ -39,7 +39,12 @@ private:
 
 private:
   AAM_CAM __model;
+  CvMat* __R;
 
+private:
+  double* __c; //CAM parameters
+  double* __t; //similarity transformation (sx,sy,tx,ty)
+  double* __shape; // current shape
 };
 
 #endif
