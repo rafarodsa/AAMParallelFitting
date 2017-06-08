@@ -35,7 +35,7 @@ private:
   void ComputeModelledTexture();
   void SampleTexture(IplImage* image);
   void BilinearInterpolation(IplImage* image, int x, int y, double* pixel)
-  void NormalizingTexture();
+  void NormalizingTexture(IplImage* image);
   void EstimateParams();
   void ComputeNewParams();
 
@@ -48,6 +48,7 @@ private:
   double* __t; //similarity transformation (sx,sy,tx,ty)
   double* __shape; // current shape S
   double* __texture; //current texture gs
+  double* __modelledTexture;
 };
 
 #endif

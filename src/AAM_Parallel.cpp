@@ -60,14 +60,39 @@ void AAM_Parallel::ComputeModelledShape(IplImage* image) {
       }
       x += CVMAT_ELEM(So, 0, i);
       y += CVMAT_ELEM(So, 0, i+1);
+
+      //TODO check why the floor
       __shape[i] = std::floor(__q[0]*x - __q[1]*y + __q[2]);
       __shape[i+1] = std::floor(__q[0]*x + __q[1]*y + __q[3]);
 
+      // Ensure the vertex is inside the image.
       Clamp(__shape[i], 0.0, (double) (image->width - 1));
       Clamp(__shape[i+1], 0.0, (double) (image->height - 1));
     }
   }
 
+}
+
+void ComputeModelledShape(IplImage* image) {
+
+  cvMat* Qg = __model.__Qg;
+  cvMat* Go = __model.__MeanG;
+  int j,k;
+  int channels = image->nChannels, np = __model.__texture.nPixels();
+  #pragma omp parallel
+  {
+    #pragma omp for schedule(dynamic,1)
+    for (int i = 0; i < np; i++) {
+      for (j = 0; j < channels; j++) {
+        __modelledTexture[i*channels + j] = CVMAT_ELEM(Go, 0, i*channels + j);
+        k = 0;
+        while (k < __model.nModes()) {
+          __modelledTexture[i*channels + j] += CVMAT_ELEM(Qg, k, i*channels + j) * __c[k];
+          k++;
+        }
+      }
+    }
+  }
 }
 
 void AAM_Parallel::SampleTexture(IplImage* image) {
@@ -151,7 +176,6 @@ void NormalizingTexture(IplImage* image) {
     }
 
   }
-
 }
 
 
