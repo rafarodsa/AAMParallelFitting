@@ -36,8 +36,9 @@ private:
   void SampleTexture(IplImage* image);
   void BilinearInterpolation(IplImage* image, int x, int y, double* pixel)
   void NormalizingTexture(IplImage* image);
-  void EstimateParams();
+  void EstimateParams(IplImage* image);
   void ParamsUpdate(IplImage* image);
+  void ComputeNewParams(double k);
 
 private:
   AAM_CAM __model;

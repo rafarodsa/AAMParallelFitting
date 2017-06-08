@@ -25,7 +25,30 @@ AAM_Parallel::~AAM_Parallel() {
 
 }
 
-void AAM_Parallel::Fit(const IplImage* image, int max_iter = 30, bool showprocess = false) {
+void AAM_Parallel::Fit(const IplImage* image, int max_iter = 30, bool showprocess = false, int epsilon = 0.03) {
+  int np = 5;
+  double k_values[np] = {1,0.5,0.25,0.125,0.0625};
+  bool converge = false;
+  int iter = 0;
+  double newError, error;
+
+  EstimateParams(image);
+  error = ComputeEstimationError(image);
+  while (iter < max_inter && !converge) {
+    ParamsUpdate(image);
+    for (int k = 0; k < np; k++) {
+      ComputeNewParams(k);
+      newError = ComputeEstimationError(image);
+      if (newError < error) {
+        break;
+      }
+    }
+    if (error - newError <= epsilon)
+      converge = true;
+    else
+      error = newError;
+    iter++;
+  }
 
 }
 
@@ -72,6 +95,7 @@ void AAM_Parallel::ComputeModelledShape(IplImage* image) {
   }
 
 }
+
 
 void ComputeModelledShape(IplImage* image) {
 
@@ -200,11 +224,32 @@ void ParamsUpdate(IplImage* image) {
     {
       #pragma omp for schedule(dynamic,1)
       for (int i = 0; i < __model.__texture.nPixels()*3; i++) {
-        __delta_c_q[k] = CVMAT_ELEM(__R, k, i);
+        __delta_c_q[k] = CVMAT_ELEM(__R, k, i) * (-__dif[i]);
       }
     }
   }
 }
+
+void EstimateParams(IplImage* image) {
+  //TODO implement
+}
+
+void ComputeNewParams(double k) {
+  int i;
+  #pragma omp parallel
+  {
+    #pragma for schedule(dynamic,1) nowait
+    for (i = 0; i < __model.nModes(); i++) {
+      __c[i] += k * __delta_c_q[i];
+    }
+
+    #pragma for schedule(dynamic,1)
+    for (i = 0; i < 4; i++) {
+      __t[i] += k * __delta_c_q[__model.nModes() + i];
+    }
+  }
+}
+
 
 void AAM_Parallel::BilinearInterpolation(IplImage* image, double x, double y, double* pixel) {
 
