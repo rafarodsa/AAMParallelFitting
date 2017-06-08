@@ -13,7 +13,7 @@
 #include "AAM_Parallel.h"
 #include "omp.h"
 
-#define CVMAT_ELEM(Mat, i, j) *(Mat->db + i*Mat->cols + j)
+#define CVMAT_ELEM(Mat, i, j) CV_MAT_ELEM(Mat, double, i,j)
 
 using namespace std;
 
@@ -178,6 +178,33 @@ void NormalizingTexture(IplImage* image) {
   }
 }
 
+
+double ComputeEstimationError(IplImage* image) {
+  double error = 0.0;
+  #pragma omp parallel
+  {
+    #pragma omp for schedule(dynamic,1) reduction(+:error)
+    for (int i = 0; i < __model.__texture.nPixels()*3; i++) {
+      __dif[i] = __texture[i] - __modelledTexture[i];
+      error = error + (__dif[i]*__dif[i]);
+    }
+  }
+
+  return error;
+}
+
+void ParamsUpdate(IplImage* image) {
+  int k = 0;
+  for (k = 0; k < __model.nModes(); k++) {
+    #pragma omp parallel
+    {
+      #pragma omp for schedule(dynamic,1)
+      for (int i = 0; i < __model.__texture.nPixels()*3; i++) {
+        __delta_c_q[k] = CVMAT_ELEM(__R, k, i);
+      }
+    }
+  }
+}
 
 void AAM_Parallel::BilinearInterpolation(IplImage* image, double x, double y, double* pixel) {
 

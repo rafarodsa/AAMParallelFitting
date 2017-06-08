@@ -29,15 +29,15 @@ public:
   void Read(const std::string& filename);
 
 private:
-  void ComputeEstimationError();
+  double ComputeEstimationError(IplImage* image);
   void ComputeModelledShape(IplImage* image);
   void Clamp(double& x, double min, double max);
-  void ComputeModelledTexture();
+  void ComputeModelledTexture(IplImage* image);
   void SampleTexture(IplImage* image);
   void BilinearInterpolation(IplImage* image, int x, int y, double* pixel)
   void NormalizingTexture(IplImage* image);
   void EstimateParams();
-  void ComputeNewParams();
+  void ParamsUpdate(IplImage* image);
 
 private:
   AAM_CAM __model;
@@ -49,6 +49,8 @@ private:
   double* __shape; // current shape S
   double* __texture; //current texture gs
   double* __modelledTexture;
+  double* __dif;
+  double* __delta_c_q;
 };
 
 #endif
