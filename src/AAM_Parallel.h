@@ -31,8 +31,10 @@ public:
 private:
   void ComputeEstimationError();
   void ComputeModelledShape(IplImage* image);
+  void Clamp(double& x, double min, double max);
   void ComputeModelledTexture();
-  void SampleTexture();
+  void SampleTexture(IplImage* image);
+  void BilinearInterpolation(IplImage* image, int x, int y, double* pixel)
   void NormalizingTexture();
   void EstimateParams();
   void ComputeNewParams();
@@ -44,7 +46,8 @@ private:
 private:
   double* __c; //CAM parameters
   double* __t; //similarity transformation (sx,sy,tx,ty)
-  double* __shape; // current shape
+  double* __shape; // current shape S
+  double* __texture; //current texture gs
 };
 
 #endif
