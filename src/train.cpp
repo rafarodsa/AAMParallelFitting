@@ -25,7 +25,7 @@ int main(int argc, char** argv)
 	file_lists ptsFiles = AAM_Common::ScanNSortDirectory(argv[1], argv[3]);
 
 	if(ptsFiles.size() != imgFiles.size()){
-		fprintf(stderr, "ERROE(%s, %d): #Shapes != #Images\n",
+		fprintf(stderr, "ERROR(%s, %d): #Shapes != #Images\n",
 			__FILE__, __LINE__);
 		exit(0);
 	}
