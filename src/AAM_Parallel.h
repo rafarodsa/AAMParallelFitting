@@ -26,7 +26,7 @@ public:
 
 public:
 
-  void Fit(IplImage* image, int max_iter = 30, bool showprocess = false, double epsilon = 0.03);
+  void Fit(IplImage* image, int max_iter = 30, bool showprocess = false, double epsilon = 0.000003);
   bool Read(const std::string& filename);
   void Draw(IplImage* image);
 private:

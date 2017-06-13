@@ -2,3 +2,6 @@ imm_face_db/
 build/
 bin/
 .DS_Store
+.sonarlint/
+.metadata/
+eclipse

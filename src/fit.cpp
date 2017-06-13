@@ -70,7 +70,7 @@ int main(int argc, char** argv)
 //
 // 	else
 	{
-		IplImage* image = cvLoadImage(filename, CV_LOAD_IMAGE_GRAYSCALE);
+		IplImage* image = cvLoadImage(filename, CV_LOAD_IMAGE_COLOR);
 
 		// AAM_Shape Shape;
 		// bool flag = flag = model.InitShapeFromDetBox(Shape, facedet, image);
@@ -81,7 +81,7 @@ int main(int argc, char** argv)
 		cvNamedWindow("Original");
 		cvShowImage("Original", image);
 
-		model.Fit(image, 500, false);
+		model.Fit(image, 2000, false);
 		model.Draw(image);
 
 		cvNamedWindow("Fitting");
