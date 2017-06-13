@@ -26,20 +26,20 @@ public:
 
 public:
 
-  void Fit(IplImage* image, int max_iter = 30, bool showprocess = false, double epsilon = 0.000003);
+  void Fit(IplImage* image, int max_iter = 30, bool showprocess = false, double epsilon = 0.00000000000003);
   bool Read(const std::string& filename);
   void Draw(IplImage* image);
 private:
-  double ComputeEstimationError(IplImage* image);
-  void ComputeModelledShape(IplImage* image);
+  double ComputeEstimationError(IplImage* image, double* __uc, double* __uq);
+  void ComputeModelledShape(IplImage* image, double* __uc, double* __uq);
   void Clamp(double& x, double min, double max);
-  void ComputeModelledTexture(IplImage* image);
+  void ComputeModelledTexture(IplImage* image, double* __uc);
   void SampleTexture(IplImage* image);
   void BilinearInterpolation(IplImage* image, double x, double y, double* pixel);
   void NormalizingTexture(IplImage* image);
   void EstimateParams(IplImage* image);
   void ParamsUpdate(IplImage* image);
-  void ComputeNewParams(double k);
+  void ComputeNewParams(double k, double* __c, double* __q);
 
 private:
   AAM_CAM __model;

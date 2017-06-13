@@ -34,18 +34,26 @@ void AAM_Parallel::Fit(IplImage* image, int max_iter, bool showprocess, double e
 	int iter = 0;
 	double newError, error;
 	IplImage* Drawimg = 0;
-
+  double __update_c[__model.nModes()];
+  double __update_q[4];
 	EstimateParams(image);
-	error = ComputeEstimationError(image);
+	error = ComputeEstimationError(image, __c, __q);
+
+  cout<< "Init error: " << error << endl;
 	while (iter < max_iter && !converge) {
 		ParamsUpdate(image);
 
 
 
 		for (int k = 0; k < np; k++) {
-			ComputeNewParams(k_values[k]);
-			newError = ComputeEstimationError(image);
-			if (newError < error) {
+			cout << "k: " << k << endl;
+			ComputeNewParams(k_values[k], __update_c, __update_q);
+			newError = ComputeEstimationError(image, __update_c, __update_q);
+			if (newError <= error) {
+        for (int j = 0; j < __model.nModes(); j++)
+          __c[j] = __update_c[j];
+        for (int j = 0; j < 4; j++)
+          __q[j] = __update_q[j];
 				cout << "break..." <<endl;
 				break;
 			}
@@ -56,14 +64,14 @@ void AAM_Parallel::Fit(IplImage* image, int max_iter, bool showprocess, double e
 		{
 			if(Drawimg == 0)	Drawimg = cvCloneImage(image);
 			else cvCopy(image, Drawimg);
-			cout << "copied..." <<endl;
+			// cout << "copied..." <<endl;
 			Draw(Drawimg);
-			cout << "copied..." <<endl;
+			// cout << "copied..." <<endl;
 			AAM_Common::MkDir("result");
 			char filename[100];
 			sprintf(filename, "result/Iter-%02d.jpg", iter);
 			cvSaveImage(filename, Drawimg);
-			cout << "saved..." <<endl;
+			// cout << "saved..." <<endl;
 		}
 
 		if (std::abs(newError - error) <= epsilon)
@@ -98,7 +106,7 @@ bool AAM_Parallel::Read(const std::string& filename) {
 	return true;
 }
 
-void AAM_Parallel::ComputeModelledShape(IplImage* image) {
+void AAM_Parallel::ComputeModelledShape(IplImage* image, double* __uc, double* __uq) {
 	CvMat* Qs = __model.__Qs;
 	CvMat* So = __model.__MeanS;
 	int k;
@@ -112,15 +120,15 @@ void AAM_Parallel::ComputeModelledShape(IplImage* image) {
 			x = 0.0; y = 0.0;
 			// this is done for every vertex
 			while (k < __model.nModes()) {
-				x += __c[k] * CVMAT_ELEM(Qs,k,i);
-				y += __c[k] * CVMAT_ELEM(Qs,k,i+1);
+				x += __uc[k] * CVMAT_ELEM(Qs,k,i);
+				y += __uc[k] * CVMAT_ELEM(Qs,k,i+1);
 				k++;
 			}
 			x += CVMAT_ELEM(So, 0, i);
 			y += CVMAT_ELEM(So, 0, i+1);
 
-			__shape[i] = __q[0]*x - __q[1]*y + __q[2];
-			__shape[i+1] = __q[1]*x + __q[0]*y + __q[3];
+			__shape[i] = (__uq[0] + 1)*x - __uq[1]*y + __uq[2];
+			__shape[i+1] = __uq[1]*x + (__uq[0]+1)*y + __uq[3];
 
 			// Ensure the vertex is inside the image.
 			Clamp(__shape[i], 0.0, (double) (image->width - 1));
@@ -131,20 +139,20 @@ void AAM_Parallel::ComputeModelledShape(IplImage* image) {
 }
 
 
-void AAM_Parallel::ComputeModelledTexture(IplImage* image) {
+void AAM_Parallel::ComputeModelledTexture(IplImage* image, double* __uc) {
 
 	CvMat* Qg = __model.__Qg;
 	CvMat* Go = __model.__MeanG;
 	int j,k;
 	int channels = image->nChannels, np = __model.__texture.nPixels();
-#pragma omp parallel
+  #pragma omp parallel
 	{
-#pragma omp for schedule(dynamic,1)
+    #pragma omp for schedule(dynamic,1)
 		for (int i = 0; i < np; i++) {
 			__modelledTexture[i] = CVMAT_ELEM(Go, 0, i);
 			k = 0;
 			while (k < __model.nModes()) {
-				__modelledTexture[i] += (CVMAT_ELEM(Qg, k, i) * __c[k]);
+				__modelledTexture[i] += (CVMAT_ELEM(Qg, k, i) * __uc[k]);
 				k++;
 			}
 		}
@@ -186,48 +194,44 @@ void AAM_Parallel::SampleTexture(IplImage* image) {
 void AAM_Parallel::NormalizingTexture(IplImage* image) {
 
 	int channels = image->nChannels;
-	double mean[MAX_CHANNELS], norm = 0.0, alpha = 0.0;
+	double mean = 0.0, norm = 0.0, alpha = 0.0;
 	const CvMat* mean_texture = __model.__MeanG;
 	bool alpha0 = false;
 	int np = __model.__paw.__nPixels;
 	int model_channels = __model.__texture.nPixels()/np;
 	channels = model_channels;
-	for (int i = 0; i < channels; i++) {
-		mean[i] = 0.0;
-	}
+	// for (int i = 0; i < channels; i++) {
+	// 	mean[i] = 0.0;
+	// }
 
 #pragma omp parallel
 	{
-#pragma omp for schedule(dynamic,1) reduction(+:mean[0:MAX_CHANNELS])
-		for (int i = 0; i < np; i++) {
-
-			for (int k = 0; k < channels; k++) {
-				mean[k] = mean[k] + __texture[i*model_channels + k];
-			}
-
+    #pragma omp for schedule(dynamic,1) reduction(+:mean)
+		for (int i = 0; i < __model.__texture.nPixels(); i++) {
+				mean = mean + __texture[i];
 		}
 
-#pragma omp single
-		for (int k = 0 ; k < channels; k++)
-			mean[k] /= (double)np;
+    #pragma omp single
+
+		mean /= __model.__texture.nPixels();
 
 
-#pragma omp for schedule(dynamic,1) reduction(+: norm)
+    #pragma omp for schedule(dynamic,1) reduction(+: norm)
 		for (int i = 0; i < np; i++) {
-			for (int k = 0; k < channels; k++) {
-				__texture[i*model_channels + k] -= mean[k];   // unbias
+			for (int k = 0; k < model_channels; k++) {
+				__texture[i*model_channels + k] -= mean;   // unbias
 				norm = norm + (__texture[i*model_channels + k]*__texture[i*model_channels + k]);
 			}
 		}
 
-#pragma single
+    #pragma single
 		{
 			norm = std::sqrt(norm);
 		}
 
 #pragma omp for schedule(dynamic,1) reduction(+: alpha)
 		for (int i = 0; i < np; i++) {
-			for (int k = 0; k < channels; k++) {
+			for (int k = 0; k < model_channels; k++) {
 				__texture[i*model_channels + k] /= norm;   // normalize
 				alpha = alpha + (__texture[i*model_channels + k] * CVMAT_ELEM(mean_texture,0,i*model_channels + k));
 			}
@@ -240,7 +244,7 @@ void AAM_Parallel::NormalizingTexture(IplImage* image) {
 		if (!alpha0) {
 #pragma omp for schedule(dynamic,1)
 			for (int i = 0; i < np; i++) {
-				for (int k = 0; k < channels; k++) {
+				for (int k = 0; k < model_channels; k++) {
 					__texture[i*model_channels + k] /= alpha;
 				}
 			}
@@ -249,12 +253,12 @@ void AAM_Parallel::NormalizingTexture(IplImage* image) {
 }
 
 
-double AAM_Parallel::ComputeEstimationError(IplImage* image) {
+double AAM_Parallel::ComputeEstimationError(IplImage* image, double* __uc, double* __uq) {
 	double error = 0.0;
-	ComputeModelledShape(image);
+	ComputeModelledShape(image,__uc,__uq);
 	SampleTexture(image);
 	NormalizingTexture(image);
-	ComputeModelledTexture(image);
+	ComputeModelledTexture(image, __uc);
 
 	int np = __model.__texture.nPixels();
 	int model_channels = __model.__texture.nPixels()/np;
@@ -286,8 +290,8 @@ void AAM_Parallel::ParamsUpdate(IplImage* image) {
 void AAM_Parallel::EstimateParams(IplImage* image) {
 	double tx = image->width/2, ty = image->height/2;
 
-	__q[0] = 1;
-	__q[1] = 1;
+	__q[0] = 0.1;
+	__q[1] = 0.1;
 	__q[2] = tx;
 	__q[3] = ty;
 
@@ -296,19 +300,23 @@ void AAM_Parallel::EstimateParams(IplImage* image) {
 
 }
 
-void AAM_Parallel::ComputeNewParams(double k) {
+void AAM_Parallel::ComputeNewParams(double k, double* __uc, double* __uq) {
 	int i;
 #pragma omp parallel
 	{
 #pragma for schedule(dynamic,1) nowait
 		for (i = 0; i < __model.nModes(); i++) {
-			__c[i] += k * __delta_c_q[i];
+			__uc[i] = __c[i] +  k * __delta_c_q[i + 4];
 		}
 
 #pragma for schedule(dynamic,1)
 		for (i = 0; i < 4; i++) {
-			__q[i] += k * __delta_c_q[__model.nModes() + i];
+			__uq[i] = __q[i] + k * __delta_c_q[i];
+      // cout << "q[" << i << "]= " << __q[i] << endl;
 		}
+
+    CvMat c = cvMat(1,__model.nModes(),CV_64FC1,__uc);
+    __model.Clamp(&c);
 	}
 }
 
@@ -354,15 +362,12 @@ void AAM_Parallel::Draw(IplImage* image) {
 	AAM_Shape Shape;
 	CvMat shape = cvMat(1,__model.__shape.nPoints()*2,CV_64FC1, __shape);
 	Shape.Mat2Point(&shape);
-	cout << "shape transformed..." <<endl;
 	double minV, maxV;
 	CvMat texture = cvMat(1,__model.__texture.nPixels(), CV_64FC1, __modelledTexture);
 	cvMinMaxLoc(&texture, &minV, &maxV);
 	cvConvertScale(&texture, &texture, 255/(maxV-minV), -minV*255/(maxV-minV));
-	cout << "texture scaled..." <<endl;
 	AAM_PAW paw;
 	paw.Train(Shape, __model.__Points, __model.__Storage, __model.__paw.GetTri(), false);
-	cout << "paw trained..." << endl;
 	AAM_Common::DrawAppearance(image, Shape, &texture, paw, __model.__paw);
 
 }
