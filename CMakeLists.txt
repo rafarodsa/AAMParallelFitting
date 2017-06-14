@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.6)
 project (AAM_OpenMP)
 
-list(APPEND CMAKE_CXX_FLAGS "-std=c++0x -O2 -fopenmp")
+list(APPEND CMAKE_CXX_FLAGS "-std=c++0x -O2 -fopenmp -fopenmp-simd")
 find_package(OpenCV REQUIRED)
 
 add_subdirectory(src)

@@ -261,7 +261,7 @@ void AAM_Parallel::NormalizingTexture(IplImage* image) {
 
 #pragma omp parallel
 	{
-    #pragma omp for schedule(dynamic,1) reduction(+:mean)
+    #pragma omp for simd schedule(simd:static,8) reduction(+:mean)
 		for (int i = 0; i < __model->__texture.nPixels(); i++) {
 				mean = mean + __texture[i];
 		}
@@ -273,7 +273,7 @@ void AAM_Parallel::NormalizingTexture(IplImage* image) {
 
 		#pragma omp barrier
 
-    #pragma omp for schedule(dynamic,1) reduction(+: norm)
+    #pragma omp for simd schedule(simd:static,8) reduction(+: norm)
 		for (int i = 0; i < np; i++) {
 			for (int k = 0; k < model_channels; k++) {
 				__texture[i*model_channels + k] -= mean;   // unbias
@@ -288,7 +288,7 @@ void AAM_Parallel::NormalizingTexture(IplImage* image) {
 
 		#pragma omp barrier
 
-		#pragma omp for schedule(dynamic,1) reduction(+: alpha)
+		#pragma omp for simd schedule(simd:static,8) reduction(+:alpha)
 		for (int i = 0; i < np; i++) {
 			for (int k = 0; k < model_channels; k++) {
 				__texture[i*model_channels + k] /= norm;   // normalize
@@ -297,7 +297,7 @@ void AAM_Parallel::NormalizingTexture(IplImage* image) {
 		}
 	}
 	if (alpha != 0) {
-		#pragma omp parallel for schedule(dynamic,1)
+		#pragma omp parallel for simd schedule(simd:static,8)
 		for (int i = 0; i < np; i++) {
 			for (int k = 0; k < model_channels; k++) {
 				__texture[i*model_channels + k] /= alpha;
@@ -322,7 +322,7 @@ double AAM_Parallel::ComputeEstimationError(IplImage* image, double* __uc, doubl
 	int model_channels = __model->__texture.nPixels()/np;
   #pragma omp parallel
 	{
-    #pragma omp for schedule(dynamic,1) reduction(+:error)
+    #pragma omp for simd schedule(simd:static,8) reduction(+:error)
 		for (int i = 0; i < np; i+=1 ) {
 			__dif[i] = -__texture[i] + __modelledTexture[i];
 			error = error + (__dif[i]*__dif[i]);
@@ -337,7 +337,7 @@ void AAM_Parallel::ParamsUpdate(IplImage* image) {
 	double val;
 	for (k = 0; k < __model->nModes() + 4; k++) {
 		val = 0.0;
-    #pragma omp parallel for schedule(dynamic,1) reduction(+:val)
+    #pragma omp parallel for simd schedule(simd:static,8) reduction(+:val)
 		for (int i = 0; i < __model->__texture.nPixels(); i++) {
 			val = val + (CVMAT_ELEM(__R, k, i) * __dif[i]);
 		}
@@ -362,12 +362,12 @@ void AAM_Parallel::ComputeNewParams(double k, double* __uc, double* __uq) {
 	int i;
 	#pragma omp parallel
 	{
-		#pragma for schedule(dynamic,1) nowait private(i)
+		#pragma for simd schedule(simd:static,8) nowait private(i)
 		for (i = 0; i < __model->nModes(); i++) {
 			__uc[i] = __c[i] +  k * __delta_c_q[i + 4];
 		}
 
-		#pragma for schedule(dynamic,1) private(i)
+		#pragma for simd schedule(simd:static,8) private(i)
 		for (i = 0; i < 4; i++) {
 			__uq[i] = __q[i] + k * __delta_c_q[i];
       // cout << "q[" << i << "]= " << __q[i] << endl;
@@ -377,7 +377,7 @@ void AAM_Parallel::ComputeNewParams(double k, double* __uc, double* __uq) {
 	__model->Clamp(&c);
 }
 
-
+// #pragma omp declare simd
 void AAM_Parallel::BilinearInterpolation(IplImage* image, double x, double y, double* pixel) {
 
 	/*

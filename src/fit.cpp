@@ -101,7 +101,7 @@ int main(int argc, char** argv)
 
 		cvNamedWindow("Fitting");
 		cvShowImage("Fitting", image);
-		cvWaitKey(0);
+		// cvWaitKey(0);
 
 		cvReleaseImage(&image);
 	}
