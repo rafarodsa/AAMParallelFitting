@@ -26,8 +26,9 @@ public:
 
 public:
 
-  void Fit(IplImage* image, int max_iter = 30, bool showprocess = false, double epsilon = 0.00000000000003);
+  void Fit(IplImage* image, AAM_Shape& shape, int max_iter = 30, bool showprocess = false, double epsilon = 0.000003);
   bool Read(const std::string& filename);
+
   void Draw(IplImage* image);
 private:
   double ComputeEstimationError(IplImage* image, double* __uc, double* __uq);
@@ -42,7 +43,8 @@ private:
   void ComputeNewParams(double k, double* __c, double* __q);
 
 private:
-  AAM_CAM __model;
+  AAM_Pyramid __modelP;
+  AAM_CAM* __model;
   CvMat* __R;
 
 private:

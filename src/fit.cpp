@@ -70,7 +70,7 @@ int main(int argc, char** argv)
 //
 // 	else
 	{
-		IplImage* image = cvLoadImage(filename, CV_LOAD_IMAGE_COLOR);
+		IplImage* image = cvLoadImage(filename, -1);
 
 		// AAM_Shape Shape;
 		// bool flag = flag = model.InitShapeFromDetBox(Shape, facedet, image);
@@ -78,10 +78,25 @@ int main(int argc, char** argv)
 		// 	fprintf(stderr, "The image doesn't contain any faces\n");
 		// 	exit(0);
 		// }
+
+
+		VJfacedetect facedet;
+		facedet.LoadCascade("haarcascade_frontalface_alt2.xml");
+		cout << "Classifier file loaded" << endl;
+		AAM_Shape Shape;
+		AAM_Pyramid pyramid_model;
+		bool flag = flag = pyramid_model.InitShapeFromDetBox(Shape, facedet, image);
+		if(flag == false) {
+			fprintf(stderr, "The image doesn't contain any faces\n");
+			exit(0);
+		}
+		else
+			cout << "Face detected" << endl;
+
 		cvNamedWindow("Original");
 		cvShowImage("Original", image);
 
-		model.Fit(image, 500, true);
+		model.Fit(image, Shape, 1000, true);
 		model.Draw(image);
 
 		cvNamedWindow("Fitting");
