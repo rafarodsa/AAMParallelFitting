@@ -63,6 +63,33 @@ void AAM_Parallel::FitAll(file_lists images, string outfile, int max_frames, int
 	cout << "With maximum " << max_layers << " layers of the model" << endl;
 
 	cout << "===========================================================" << endl;
+
+	cout << "Parallel evaluation..." << endl;
+	output << "Parallel,\n";
+	output << "layer,frame,nPixels,time,error\n";
+
+	omp_set_num_threads(2);
+	for (int j = 0; j < layers; j++){
+		SetModel(j); // set the model to the jth layer
+
+		for (int i = 0; i < frames; i++) {
+			 image = cvLoadImage(images[i].c_str(), -1);
+			 facedetected = __modelP.InitShapeFromDetBox(shape,facedet,image);
+			 if (facedetected) {
+				 cout << "Frame " << i << ", Layer "<< j << "....\n";
+				 output << j <<","<<i<<",";
+				 Fit(image, shape, output, max_iter, false, 0.0003);
+				 Draw(image);
+				 AAM_Common::MkDir("results_evaluation");
+
+				 sprintf(filename,"results_evaluation/parallel%d-%d.jpg",j,i);
+				 cvSaveImage(filename, image);
+				 cvReleaseImage(&image);
+			 }
+
+		}
+	}
+
 	cout << "Sequential evaluation..." << endl;
 
 	output << "Sequential,\n";
@@ -91,31 +118,7 @@ void AAM_Parallel::FitAll(file_lists images, string outfile, int max_frames, int
 
 		}
 	}
-	cout << "Parallel evaluation..." << endl;
-	output << "Parallel,\n";
-	output << "layer,frame,nPixels,time,error\n";
 
-	omp_set_num_threads(omp_get_num_procs());
-	for (int j = 0; j < layers; j++){
-		SetModel(j); // set the model to the jth layer
-
-		for (int i = 0; i < frames; i++) {
-			 image = cvLoadImage(images[i].c_str(), -1);
-			 facedetected = __modelP.InitShapeFromDetBox(shape,facedet,image);
-			 if (facedetected) {
-				 cout << "Frame " << i << ", Layer "<< j << "....\n";
-				 output << j <<","<<i<<",";
-				 Fit(image, shape, output, max_iter, false, 0.0003);
-				 Draw(image);
-				 AAM_Common::MkDir("results_evaluation");
-
-				 sprintf(filename,"results_evaluation/parallel%d-%d.jpg",j,i);
-				 cvSaveImage(filename, image);
-				 cvReleaseImage(&image);
-			 }
-
-		}
-	}
 	cout << "Done..." << endl;
 	output.close();
 }
