@@ -28,7 +28,102 @@ AAM_Parallel::~AAM_Parallel() {
 
 }
 
-void AAM_Parallel::Fit(IplImage* image, AAM_Shape& shape, int max_iter, bool showprocess, double epsilon) {
+int AAM_Parallel::GetNumLayers() {
+	return __modelP.__model.size();
+}
+void AAM_Parallel::SetModel(int layer) {
+	if (layer >= __modelP.__model.size()) {
+		fprintf(stderr, "Error: Layer %d is not available in the model\n", layer+1);
+		exit(0);
+	}
+	__R = ((AAM_Basic*)(__modelP.__model[layer]))->__G;
+	__model = &((AAM_Basic*)(__modelP.__model[layer]))->__cam;
+}
+
+void AAM_Parallel::FitAll(file_lists images, string outfile, int max_frames, int max_iter, int max_layers) {
+	int frames = images.size() <= max_frames? images.size():max_frames;
+	int layers = GetNumLayers() >= max_layers? max_layers:GetNumLayers();
+	IplImage* image;
+	char filename[100];
+	VJfacedetect facedet;
+	AAM_Shape shape;
+	bool facedetected;
+
+	facedet.LoadCascade("../resources/haarcascade_frontalface_alt2.xml");
+
+	ofstream output(outfile);
+	if (!output) {
+		cout << "ERROR: Result file couldn't be opened"<< endl;
+	}
+
+	cout << "Max threads: " << omp_get_num_procs()<<endl;
+
+	cout << "Starting evaluation fitting.. "<< images.size() << " images\n";
+	cout << "Fitting maximum " << frames << " frames"<< endl;
+	cout << "With maximum " << max_layers << " layers of the model" << endl;
+
+	cout << "===========================================================" << endl;
+
+	cout << "Parallel evaluation..." << endl;
+	output << "Parallel,\n";
+	output << "layer,frame,nPixels,time,error\n";
+
+	omp_set_num_threads(2);
+	for (int j = 0; j < layers; j++){
+		SetModel(j); // set the model to the jth layer
+
+		for (int i = 0; i < frames; i++) {
+			 image = cvLoadImage(images[i].c_str(), -1);
+			 facedetected = __modelP.InitShapeFromDetBox(shape,facedet,image);
+			 if (facedetected) {
+				 cout << "Frame " << i << ", Layer "<< j << "....\n";
+				 output << j <<","<<i<<",";
+				 Fit(image, shape, output, max_iter, false, 0.0003);
+				 Draw(image);
+				 AAM_Common::MkDir("results_evaluation");
+
+				 sprintf(filename,"results_evaluation/parallel%d-%d.jpg",j,i);
+				 cvSaveImage(filename, image);
+				 cvReleaseImage(&image);
+			 }
+
+		}
+	}
+
+	cout << "Sequential evaluation..." << endl;
+
+	output << "Sequential,\n";
+	output << "layer,frame,nPixels,time,error\n";
+
+	omp_set_num_threads(1);
+	for (int j = 0; j < layers; j++){
+		SetModel(j); // set the model to the jth layer
+
+		for (int i = 0; i < frames; i++) {
+
+			 image = cvLoadImage(images[i].c_str(), -1);
+			 facedetected = __modelP.InitShapeFromDetBox(shape,facedet,image);
+			 if (facedetected) {
+				 cout << "Frame " << i << ", Layer "<< j << "....\n";
+				 output << j <<","<<i<<",";
+				 Fit(image, shape, output, max_iter, false, 0.0003);
+				//  Draw(image);
+				//  AAM_Common::Mkdir("results_evaluation");
+				//  cvSaveImage(sprintf("sequential%d-%d.jpg",j,i), image);
+				cvReleaseImage(&image);
+			 }
+			 else {
+				 cout << "Frame " << i << ", Layer "<< j << ".. Face not detected\r";
+			 }
+
+		}
+	}
+
+	cout << "Done..." << endl;
+	output.close();
+}
+
+void AAM_Parallel::Fit(IplImage* image, AAM_Shape& shape, ofstream& out, int max_iter, bool showprocess, double epsilon) {
 	int np = 8;
 	double k_values[np] = {1,0.5,0.25,0.125,0.0625,0.03125,0.03125/2, 0.03125/4};
 	bool converge = false;
@@ -38,6 +133,7 @@ void AAM_Parallel::Fit(IplImage* image, AAM_Shape& shape, int max_iter, bool sho
   double __update_c[__model->nModes()];
   double __update_q[4];
 
+
 	CvMat* __s = cvCreateMat(1,__model->__shape.nPoints()*2, CV_64FC1);
 	CvMat* __p = cvCreateMat(1,__model->__shape.nModes(), CV_64FC1);
 	CvMat* __lambda = cvCreateMat(1,__model->__texture.nModes(), CV_64FC1);
@@ -45,37 +141,36 @@ void AAM_Parallel::Fit(IplImage* image, AAM_Shape& shape, int max_iter, bool sho
 	CvMat __sampledTexture = cvMat(1, __model->__texture.nPixels(), CV_64FC1, __texture);
 	CvMat __cMat = cvMat(1,__model->nModes(),CV_64FC1, __c);
 
-	VJfacedetect facedet;
-	facedet.LoadCascade("haarcascade_frontalface_alt2.xml");
-	cout << "Classifier file loaded" << endl;
-	bool flag = flag = __modelP.InitShapeFromDetBox(shape, facedet, image);
-	if(flag == false) {
-		fprintf(stderr, "The image doesn't contain any faces\n");
-		exit(0);
-	}
-	else
-		cout << "Face detected" << endl;
+	// VJfacedetect facedet;
+	// facedet.LoadCascade("haarcascade_frontalface_alt2.xml");
+	// cout << "Classifier file loaded" << endl;
+	// bool flag = flag = __modelP.InitShapeFromDetBox(shape, facedet, image);
+	// if(flag == false) {
+	// 	fprintf(stderr, "The image doesn't contain any faces\n");
+	// 	exit(0);
+	// }
+	// else
+		// cout << "Face detected" << endl;
 
-
-
-	cout << "Space allocated" << endl;
+	// cout << "Space allocated" << endl;
 	shape.Point2Mat(__s);
-	cout << "shape to mat.." << endl;
+	// cout << "shape to mat.." << endl;
 	//shape parameter
 	__model->__shape.CalcParams(__s, __p, &__qMat);
-	cout << "shape params computed" << endl;
+	// cout << "shape params computed" << endl;
 	//texture parameter
 	__model->__paw.CalcWarpTexture(__s, image, &__sampledTexture);
 	__model->__texture.NormalizeTexture(__model->__MeanG, &__sampledTexture);
 	__model->__texture.CalcParams(&__sampledTexture, __lambda);
 
-	cout << "texture sampled" << endl;
+	// cout << "texture sampled" << endl;
 	//combined appearance parameter
 	__model->CalcParams(&__cMat, __p, __lambda);
 
-	cout << "initial params computed" << endl;
+	// cout << "initial params computed" << endl;
 
 	// EstimateParams(image);
+	double t = gettime;
 	error = ComputeEstimationError(image, __c, __q);
 
 	if(showprocess)
@@ -92,7 +187,7 @@ void AAM_Parallel::Fit(IplImage* image, AAM_Shape& shape, int max_iter, bool sho
 		// cout << "saved..." <<endl;
 	}
 
-  cout<< "Init error: " << error << endl;
+  // cout<< "Init error: " << error << endl;
 	while (iter < max_iter && !converge) {
 		ParamsUpdate(image);
 
@@ -107,12 +202,12 @@ void AAM_Parallel::Fit(IplImage* image, AAM_Shape& shape, int max_iter, bool sho
           __c[j] = __update_c[j];
         for (int j = 0; j < 4; j++)
           __q[j] = __update_q[j];
-				cout << "break..." <<endl;
+				// cout << "break..." <<endl;
 				break;
 			}
 			// cout << "iter for new error: "<< k << endl;
 		}
-		cout << "Error " << iter<< ": " << newError << endl;
+		// cout << "Error " << iter<< ": " << newError << endl;
 		if(showprocess)
 		{
 			if(Drawimg == 0)	Drawimg = cvCloneImage(image);
@@ -134,6 +229,15 @@ void AAM_Parallel::Fit(IplImage* image, AAM_Shape& shape, int max_iter, bool sho
 		iter++;
 	}
 
+	if (out && out.is_open()){
+		out << __model->__texture.nPixels()<<","<< gettime-t << ","<<error <<"\n";
+		cout << "\tFitted..." << "Pixels: "<< __model->__texture.nPixels()<<", Time: "<< gettime-t << "ms, Error: "<< error << endl;
+	}
+
+	cvReleaseMat(&__s);
+	cvReleaseMat(&__p);
+	cvReleaseMat(&__lambda);
+	cvReleaseImage(&Drawimg);
 }
 
 bool AAM_Parallel::Read(const std::string& filename) {
@@ -426,5 +530,4 @@ void AAM_Parallel::Draw(IplImage* image) {
 	AAM_PAW paw;
 	paw.Train(Shape, __model->__Points, __model->__Storage, __model->__paw.GetTri(), false);
 	AAM_Common::DrawAppearance(image, Shape, &texture, paw, __model->__paw);
-
 }
