@@ -28,6 +28,18 @@ AAM_Parallel::~AAM_Parallel() {
 
 }
 
+int AAM_Parallel::GetNumLayers() {
+	return __modelP.__model.size();
+}
+void AAM_Parallel::SetModel(int layer) {
+	if (layer >= __modelP.__model.size()) {
+		fprintf(stderr, "Error: Layer %d is not available in the model\n", layer+1);
+		exit(0);
+	}
+	__R = ((AAM_Basic*)(__modelP.__model[layer]))->__G;
+	__model = &((AAM_Basic*)(__modelP.__model[layer]))->__cam;
+}
+
 void AAM_Parallel::Fit(IplImage* image, AAM_Shape& shape, int max_iter, bool showprocess, double epsilon) {
 	int np = 8;
 	double k_values[np] = {1,0.5,0.25,0.125,0.0625,0.03125,0.03125/2, 0.03125/4};
@@ -53,27 +65,25 @@ void AAM_Parallel::Fit(IplImage* image, AAM_Shape& shape, int max_iter, bool sho
 		fprintf(stderr, "The image doesn't contain any faces\n");
 		exit(0);
 	}
-	else
-		cout << "Face detected" << endl;
+	// else
+		// cout << "Face detected" << endl;
 
-
-
-	cout << "Space allocated" << endl;
+	// cout << "Space allocated" << endl;
 	shape.Point2Mat(__s);
-	cout << "shape to mat.." << endl;
+	// cout << "shape to mat.." << endl;
 	//shape parameter
 	__model->__shape.CalcParams(__s, __p, &__qMat);
-	cout << "shape params computed" << endl;
+	// cout << "shape params computed" << endl;
 	//texture parameter
 	__model->__paw.CalcWarpTexture(__s, image, &__sampledTexture);
 	__model->__texture.NormalizeTexture(__model->__MeanG, &__sampledTexture);
 	__model->__texture.CalcParams(&__sampledTexture, __lambda);
 
-	cout << "texture sampled" << endl;
+	// cout << "texture sampled" << endl;
 	//combined appearance parameter
 	__model->CalcParams(&__cMat, __p, __lambda);
 
-	cout << "initial params computed" << endl;
+	// cout << "initial params computed" << endl;
 
 	// EstimateParams(image);
 	error = ComputeEstimationError(image, __c, __q);

@@ -28,7 +28,8 @@ public:
 
   void Fit(IplImage* image, AAM_Shape& shape, int max_iter = 30, bool showprocess = false, double epsilon = 0.000003);
   bool Read(const std::string& filename);
-
+  int GetNumLayers();
+  void SetModel(int layer);
   void Draw(IplImage* image);
 private:
   double ComputeEstimationError(IplImage* image, double* __uc, double* __uq);

@@ -32,6 +32,7 @@ int main(int argc, char** argv)
 	cout<< "Read model file" << endl;
 	char filename[100];
 	strcpy(filename, argv[2]);
+	cout << "Layers: "<< model.GetNumLayers() << endl;
 
 // 	if(strstr(filename, ".avi"))
 // 	{
@@ -81,11 +82,12 @@ int main(int argc, char** argv)
 
 
 		VJfacedetect facedet;
-		facedet.LoadCascade("haarcascade_frontalface_alt2.xml");
-		cout << "Classifier file loaded" << endl;
+		facedet.LoadCascade("../resources/haarcascade_frontalface_alt2.xml");
+
 		AAM_Shape Shape;
 		AAM_Pyramid pyramid_model;
 		bool flag = flag = pyramid_model.InitShapeFromDetBox(Shape, facedet, image);
+
 		if(flag == false) {
 			fprintf(stderr, "The image doesn't contain any faces\n");
 			exit(0);
@@ -96,12 +98,12 @@ int main(int argc, char** argv)
 		cvNamedWindow("Original");
 		cvShowImage("Original", image);
 
-		model.Fit(image, Shape, 1000, true);
+		model.Fit(image, Shape, 1000, false);
 		model.Draw(image);
 
 		cvNamedWindow("Fitting");
 		cvShowImage("Fitting", image);
-		// cvWaitKey(0);
+		cvWaitKey(0);
 
 		cvReleaseImage(&image);
 	}
