@@ -85,6 +85,7 @@ int main(int argc, char** argv)
 		facedet.LoadCascade("../resources/haarcascade_frontalface_alt2.xml");
 
 		AAM_Shape Shape;
+		ofstream out;
 		AAM_Pyramid pyramid_model;
 		bool flag = flag = pyramid_model.InitShapeFromDetBox(Shape, facedet, image);
 
@@ -98,7 +99,7 @@ int main(int argc, char** argv)
 		cvNamedWindow("Original");
 		cvShowImage("Original", image);
 
-		model.Fit(image, Shape, 1000, false);
+		model.Fit(image, Shape, out, 1000, false);
 		model.Draw(image);
 
 		cvNamedWindow("Fitting");

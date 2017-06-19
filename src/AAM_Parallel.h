@@ -15,6 +15,9 @@
 
 #include "AAM_CAM.h"
 #include "AAM_Util.h"
+#include <fstream>
+
+using namespace std;
 
 class AAM_Parallel;
 
@@ -25,8 +28,8 @@ public:
   ~AAM_Parallel();
 
 public:
-
-  void Fit(IplImage* image, AAM_Shape& shape, int max_iter = 30, bool showprocess = false, double epsilon = 0.000003);
+  void FitAll(file_lists images, std::string outfile, int max_frames, int max_iter, int max_layers);
+  void Fit(IplImage* image, AAM_Shape& shape, ofstream& out, int max_iter = 30, bool showprocess = false, double epsilon = 0.000003);
   bool Read(const std::string& filename);
   int GetNumLayers();
   void SetModel(int layer);
