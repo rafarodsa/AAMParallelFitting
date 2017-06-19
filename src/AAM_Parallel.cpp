@@ -95,7 +95,7 @@ void AAM_Parallel::FitAll(file_lists images, string outfile, int max_frames, int
 	output << "Parallel,\n";
 	output << "layer,frame,nPixels,time,error\n";
 
-	omp_set_num_threads(8);
+	omp_set_num_threads(omp_get_num_procs());
 	for (int j = 0; j < layers; j++){
 		SetModel(j); // set the model to the jth layer
 
