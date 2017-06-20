@@ -4,5 +4,6 @@ bin/
 .DS_Store
 .sonarlint/
 .metadata/
+.sonarlint/
 eclipse
 helen/

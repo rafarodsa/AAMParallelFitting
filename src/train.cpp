@@ -30,15 +30,15 @@ int main(int argc, char** argv)
 		exit(0);
 	}
 
-	AAM_Basic model;
-	model.Build(ptsFiles, imgFiles);
+	AAM_Pyramid model;
+	model.Build(ptsFiles, imgFiles, 0, 16);
 
-  ofstream os(argv[4], ios::out | ios::binary);
-	if(!os){
-		LOGW("ERROR(%s, %d): CANNOT create model \"%s\"\n", __FILE__, __LINE__, argv[4]);
-		return false;
-	}
-	model.Write(os);
+  // ofstream os(argv[4], ios::out | ios::binary);
+	// if(!os){
+	// 	LOGW("ERROR(%s, %d): CANNOT create model \"%s\"\n", __FILE__, __LINE__, argv[4]);
+	// 	return false;
+	// }
+	model.WriteModel(argv[4]);
 
 	return 0;
 }

@@ -36,7 +36,7 @@ int main(int argc, char** argv)
 	cout << "Layers: "<< model.GetNumLayers() << endl;
 
 	file_lists imgFiles = AAM_Common::ScanNSortDirectory(argv[2], argv[3]);
-	model.FitAll(imgFiles, argv[5], atoi(argv[4]), 15, model.GetNumLayers());
+	model.FitAll(imgFiles, argv[5], atoi(argv[4]), 30, model.GetNumLayers());
 
 	return 0;
 }
