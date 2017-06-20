@@ -12,14 +12,14 @@ using namespace std;
 
 static void usage()
 {
-	printf("Usage: build train_path image_ext point_ext model_file\n");
+	printf("Usage: train train_path image_ext point_ext model_file number_layers\n");
 	exit(0);
 }
 
 int main(int argc, char** argv)
 {
 
-	if(5 != argc)	usage();
+	if(6 != argc)	usage();
 
 	file_lists imgFiles = AAM_Common::ScanNSortDirectory(argv[1], argv[2]);
 	file_lists ptsFiles = AAM_Common::ScanNSortDirectory(argv[1], argv[3]);
@@ -30,15 +30,19 @@ int main(int argc, char** argv)
 		exit(0);
 	}
 
-	AAM_Basic model;
-	model.Build(ptsFiles, imgFiles);
+	VJfacedetect facedet;
+	facedet.LoadCascade("../resources/haarcascade_frontalface_alt2.xml");
+	AAM_Pyramid model;
+	model.Build(ptsFiles, imgFiles, 0, atoi(argv[5]));
+	model.BuildDetectMapping(ptsFiles, imgFiles, facedet);
+
 
   ofstream os(argv[4], ios::out | ios::binary);
 	if(!os){
 		LOGW("ERROR(%s, %d): CANNOT create model \"%s\"\n", __FILE__, __LINE__, argv[4]);
 		return false;
 	}
-	model.Write(os);
+	model.WriteModel(argv[4]);
 
 	return 0;
 }
