@@ -17,6 +17,8 @@
 
 #define CVMAT_ELEM(Mat, i, j) CV_MAT_ELEM(*Mat, double, i,j)
 #define MAX_CHANNELS 4
+#define CHUNK 8
+#define BIGCHUNK 16
 
 using namespace std;
 
@@ -64,11 +66,11 @@ void AAM_Parallel::FitAll(file_lists images, string outfile, int max_frames, int
 
 	cout << "===========================================================" << endl;
 
-	cout << "Parallel evaluation..." << endl;
-	output << "Parallel,\n";
+	cout << "Parallel evaluation..." << omp_get_max_threads() << " Threads..."<<endl;
+	output << "Parallel,"<< omp_get_max_threads() << ",threads\n";
 	output << "layer,frame,nPixels,time,error\n";
 
-	omp_set_num_threads(2);
+	omp_set_num_threads(omp_get_max_threads());
 	for (int j = 0; j < layers; j++){
 		SetModel(j); // set the model to the jth layer
 
@@ -85,35 +87,6 @@ void AAM_Parallel::FitAll(file_lists images, string outfile, int max_frames, int
 				 sprintf(filename,"results_evaluation/parallel%d-%d.jpg",j,i);
 				 cvSaveImage(filename, image);
 				 cvReleaseImage(&image);
-			 }
-
-		}
-	}
-
-	cout << "Sequential evaluation..." << endl;
-
-	output << "Sequential,\n";
-	output << "layer,frame,nPixels,time,error\n";
-
-	omp_set_num_threads(1);
-	for (int j = 0; j < layers; j++){
-		SetModel(j); // set the model to the jth layer
-
-		for (int i = 0; i < frames; i++) {
-
-			 image = cvLoadImage(images[i].c_str(), -1);
-			 facedetected = __modelP.InitShapeFromDetBox(shape,facedet,image);
-			 if (facedetected) {
-				 cout << "Frame " << i << ", Layer "<< j << "....\n";
-				 output << j <<","<<i<<",";
-				 Fit(image, shape, output, max_iter, false, 0.0003);
-				//  Draw(image);
-				//  AAM_Common::Mkdir("results_evaluation");
-				//  cvSaveImage(sprintf("sequential%d-%d.jpg",j,i), image);
-				cvReleaseImage(&image);
-			 }
-			 else {
-				 cout << "Frame " << i << ", Layer "<< j << ".. Face not detected\r";
 			 }
 
 		}
@@ -275,7 +248,7 @@ void AAM_Parallel::ComputeModelledShape(IplImage* image, double* __uc, double* _
 
 	#pragma omp parallel
 	{
-		#pragma omp for schedule(dynamic,1) private(x,y,k)
+		#pragma omp for schedule(dynamic,CHUNK) private(x,y,k)
 		for (int i = 0 ; i < So->cols; i += 2) {
 			k = 0;
 			x = 0.0; y = 0.0;
@@ -309,7 +282,7 @@ void AAM_Parallel::ComputeModelledTexture(IplImage* image, double* __uc) {
 
 	#pragma omp parallel
 	{
-    #pragma omp for schedule(dynamic,1)
+    #pragma omp for schedule(dynamic,BIGCHUNK)
 		for (int i = 0; i < np; i++) {
 			__modelledTexture[i] = CVMAT_ELEM(Go, 0, i);
 			k = 0;
@@ -335,7 +308,7 @@ void AAM_Parallel::SampleTexture(IplImage* image) {
 	int model_channels = __model->__texture.nPixels()/np;
 	#pragma omp parallel
 	{
-		#pragma omp for schedule(dynamic,1) private(x,y,v1,v2,v3,tri_idx,k)
+		#pragma omp for schedule(dynamic,BIGCHUNK) private(x,y,v1,v2,v3,tri_idx,k)
 		for (int i = 0; i < __model->__paw.__nPixels; i++) {
 			tri_idx = pixTri[i];
 			v1 = tri[tri_idx][0];
@@ -365,7 +338,7 @@ void AAM_Parallel::NormalizingTexture(IplImage* image) {
 
 #pragma omp parallel
 	{
-    #pragma omp for simd schedule(simd:static,8) reduction(+:mean)
+    #pragma omp for simd schedule(simd:static,BIGCHUNK) reduction(+:mean)
 		for (int i = 0; i < __model->__texture.nPixels(); i++) {
 				mean = mean + __texture[i];
 		}
@@ -377,7 +350,7 @@ void AAM_Parallel::NormalizingTexture(IplImage* image) {
 
 		#pragma omp barrier
 
-    #pragma omp for simd schedule(simd:static,8) reduction(+: norm)
+    #pragma omp for simd schedule(simd:static,BIGCHUNK) reduction(+: norm)
 		for (int i = 0; i < np; i++) {
 			for (int k = 0; k < model_channels; k++) {
 				__texture[i*model_channels + k] -= mean;   // unbias
@@ -392,7 +365,7 @@ void AAM_Parallel::NormalizingTexture(IplImage* image) {
 
 		#pragma omp barrier
 
-		#pragma omp for simd schedule(simd:static,8) reduction(+:alpha)
+		#pragma omp for simd schedule(simd:static,BIGCHUNK) reduction(+:alpha)
 		for (int i = 0; i < np; i++) {
 			for (int k = 0; k < model_channels; k++) {
 				__texture[i*model_channels + k] /= norm;   // normalize
@@ -401,7 +374,7 @@ void AAM_Parallel::NormalizingTexture(IplImage* image) {
 		}
 	}
 	if (alpha != 0) {
-		#pragma omp parallel for simd schedule(simd:static,8)
+		#pragma omp parallel for simd schedule(simd:static,BIGCHUNK)
 		for (int i = 0; i < np; i++) {
 			for (int k = 0; k < model_channels; k++) {
 				__texture[i*model_channels + k] /= alpha;
@@ -426,7 +399,7 @@ double AAM_Parallel::ComputeEstimationError(IplImage* image, double* __uc, doubl
 	int model_channels = __model->__texture.nPixels()/np;
   #pragma omp parallel
 	{
-    #pragma omp for simd schedule(simd:static,8) reduction(+:error)
+    #pragma omp for simd schedule(simd:static,BIGCHUNK) reduction(+:error)
 		for (int i = 0; i < np; i+=1 ) {
 			__dif[i] = -__texture[i] + __modelledTexture[i];
 			error = error + (__dif[i]*__dif[i]);
@@ -441,7 +414,7 @@ void AAM_Parallel::ParamsUpdate(IplImage* image) {
 	double val;
 	for (k = 0; k < __model->nModes() + 4; k++) {
 		val = 0.0;
-    #pragma omp parallel for simd schedule(simd:static,8) reduction(+:val)
+    #pragma omp parallel for simd schedule(simd:static,BIGCHUNK) reduction(+:val)
 		for (int i = 0; i < __model->__texture.nPixels(); i++) {
 			val = val + (CVMAT_ELEM(__R, k, i) * __dif[i]);
 		}
@@ -466,12 +439,12 @@ void AAM_Parallel::ComputeNewParams(double k, double* __uc, double* __uq) {
 	int i;
 	#pragma omp parallel
 	{
-		#pragma for simd schedule(simd:static,8) nowait private(i)
+		#pragma for simd schedule(simd:static,BIGCHUNK) nowait private(i)
 		for (i = 0; i < __model->nModes(); i++) {
 			__uc[i] = __c[i] +  k * __delta_c_q[i + 4];
 		}
 
-		#pragma for simd schedule(simd:static,8) private(i)
+		#pragma for simd schedule(simd:static,BIGCHUNK) private(i)
 		for (i = 0; i < 4; i++) {
 			__uq[i] = __q[i] + k * __delta_c_q[i];
       // cout << "q[" << i << "]= " << __q[i] << endl;
