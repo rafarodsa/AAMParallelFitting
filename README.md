@@ -1,9 +1,9 @@
 
 # Active Appearance Model C++ Library with Parallel Fitting implemented with OpenMP
 
-This implementation was based on the Based on the AAM Library of GreatYao: https://github.com/greatyao/aamlibrary
-and the parallel fitting algorithm was based the parallel algorithm designed in "Efficient parallel
-Implementation of Active Appeareance Model Fitting Algorithm on GPU" by Wang, Ma, Zhu et Sun.
+This implementation was based on the AAM Library of GreatYao: https://github.com/greatyao/aamlibrary
+and the parallel fitting algorithm was based on the parallel algorithm designed in "Efficient parallel
+Implementation of Active Appeareance Model Fitting Algorithm on GPU" by Wang, Ma, Zhu et Sun for CUDA; in this project adapted to OpenMP
 
 ## Dependencies
 - opencv 1.0 or later

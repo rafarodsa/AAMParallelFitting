@@ -389,7 +389,7 @@ void AAM_Pyramid::Build(const file_lists& pts_files,
 			LOGW("Unsupported aam type!\n");
 			exit(0);
 		}
-		__model[i]->Build(pts_files, img_files, 1.0/(i+1)/*1.0/pow(2.0, i)*/);
+		__model[i]->Build(pts_files, img_files, std::sqrt(2.27/(i+1))/*1.0/pow(2.0, i)*/);
 	}
 }
 
