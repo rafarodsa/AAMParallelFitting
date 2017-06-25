@@ -17,7 +17,7 @@
 
 #define CVMAT_ELEM(Mat, i, j) CV_MAT_ELEM(*Mat, double, i,j)
 #define MAX_CHANNELS 4
-#define BIGCHUNK 1500
+#define BIGCHUNK 40
 #define CHUNK 10
 using namespace std;
 
@@ -69,7 +69,7 @@ void AAM_Parallel::FitAll(file_lists images, string outfile, int max_frames, int
 
 	cout << "Parallel evaluation... " << omp_get_max_threads() << " threads..."<< endl;
 	output << "Parallel: ,"<< omp_get_max_threads() <<",threads\n";
-	output << "layer,frame,nPixels,time,error\n";
+	output << "layer,frame,nPixels,time,error,niter\n";
 
 
 	for (int j = 0; j < layers; j++){
@@ -82,11 +82,11 @@ void AAM_Parallel::FitAll(file_lists images, string outfile, int max_frames, int
 				 cout << "Frame " << i << ", Layer "<< j << "....\n";
 				 output << j <<","<<i<<",";
 				 Fit(image, shape, output, max_iter, false, 0.0003);
-				 Draw(image);
-				 AAM_Common::MkDir("results_evaluation");
-
-				 sprintf(filename,"results_evaluation/parallel%d-%d.jpg",j,i);
-				 cvSaveImage(filename, image);
+				//  Draw(image);
+				//  AAM_Common::MkDir("results_evaluation");
+				 //
+				//  sprintf(filename,"results_evaluation/parallel%d-%d.jpg",j,i);
+				//  cvSaveImage(filename, image);
 				 cvReleaseImage(&image);
 			 }
 
@@ -124,24 +124,24 @@ void AAM_Parallel::Fit(IplImage* image, AAM_Shape& shape, ofstream& out, int max
 	// 	exit(0);
 	// }
 	// else
-		// cout << "Face detected" << endl;
 
-	// cout << "Space allocated" << endl;
+
 	shape.Point2Mat(__s);
-	// cout << "shape to mat.." << endl;
+	cout << "shape to mat..." <<endl;
+	AAM_Common::CheckShape(__s, image->width, image->height);
 	//shape parameter
 	__model->__shape.CalcParams(__s, __p, &__qMat);
-	// cout << "shape params computed" << endl;
+	cout << "starting shape..." <<endl;
 	//texture parameter
 	__model->__paw.CalcWarpTexture(__s, image, &__sampledTexture);
+	cout << "init texture..." <<endl;
 	__model->__texture.NormalizeTexture(__model->__MeanG, &__sampledTexture);
+	cout << "normalize init texture..." <<endl;
 	__model->__texture.CalcParams(&__sampledTexture, __lambda);
-
-	// cout << "texture sampled" << endl;
+	cout << "init text params.." <<endl;
 	//combined appearance parameter
 	__model->CalcParams(&__cMat, __p, __lambda);
-
-	// cout << "initial params computed" << endl;
+	cout << "calc init cam params..." <<endl;
 
 	// EstimateParams(image);
 	double t = gettime;
@@ -191,9 +191,10 @@ void AAM_Parallel::Fit(IplImage* image, AAM_Shape& shape, ofstream& out, int max
 			// cout << "copied..." <<endl;
 			AAM_Common::MkDir("result");
 			char filename[100];
-			sprintf(filename, "result/Iter-%02d.jpg", iter);
+			// sprintf(filename, "result/Iter-%02d.jpg", iter);
 			cvSaveImage(filename, Drawimg);
 			// cout << "saved..." <<endl;
+			cvReleaseImage(&Drawimg);
 		}
 
 		if (std::abs(newError - error) <= epsilon)
@@ -204,14 +205,14 @@ void AAM_Parallel::Fit(IplImage* image, AAM_Shape& shape, ofstream& out, int max
 	}
 
 	if (out && out.is_open()){
-		out << __model->__texture.nPixels()<<","<< gettime-t << ","<<error <<"\n";
-		cout << "\tFitted..." << "Pixels: "<< __model->__texture.nPixels()<<", Time: "<< gettime-t << "ms, Error: "<< error << endl;
+		out << __model->__texture.nPixels()<<","<< gettime-t << ","<<error <<","<<iter<<"\n";
+		// cout << "\tFitted..." << "Pixels: "<< __model->__texture.nPixels()<<", Time: "<< gettime-t << "ms, Error: "<< error << endl;
 	}
 
 	cvReleaseMat(&__s);
 	cvReleaseMat(&__p);
 	cvReleaseMat(&__lambda);
-	cvReleaseImage(&Drawimg);
+
 }
 
 bool AAM_Parallel::Read(const std::string& filename) {

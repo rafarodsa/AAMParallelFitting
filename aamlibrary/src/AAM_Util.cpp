@@ -346,6 +346,8 @@ bool AAM_Pyramid::InitShapeFromDetBox(AAM_Shape& Shape, VJfacedetect& facedetect
 
 	if(!flag)	return false;
 
+
+
 	CvPoint2D32f  lt = DetShape[0][0], RB = DetShape[0][1];
 	Shape = __VJDetectShape;
 	Shape.ScaleXY((-lt.x+RB.x)/__referenceWidth, (-lt.y+RB.y)/__referenceWidth);

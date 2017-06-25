@@ -31,7 +31,7 @@ inline int pointPolygonTest2(CvPoint2D32f cntf[3], CvPoint pt)
 	int result = 0;
 	int i, total = 3, counter = 0;
 	CvPoint2D32f v0, v = cntf[total-1];
-	
+
 	for( i = 0; i < total; i++ )
 	{
 		double dist;
@@ -54,7 +54,7 @@ inline int pointPolygonTest2(CvPoint2D32f cntf[3], CvPoint pt)
 		counter += dist > 0;
 	}
 	result = counter % 2 == 0 ? -1 : 1;
-	
+
 	return result;
 }
 
@@ -82,14 +82,14 @@ AAM_PAW::~AAM_PAW()
 }
 
 //============================================================================
-void AAM_PAW::Train(const AAM_Shape& ReferenceShape, 
+void AAM_PAW::Train(const AAM_Shape& ReferenceShape,
 					CvMat* Points,
 					CvMemStorage* Storage,
 					const std::vector<std::vector<int> >* tri,
 					bool buildVtri)
 {
 	__referenceshape = ReferenceShape;
-	
+
 	__n = __referenceshape.NPoints();// get the number of vertex point
 
 	for(int i = 0; i < __n; i++)
@@ -107,10 +107,10 @@ void AAM_PAW::Train(const AAM_Shape& ReferenceShape,
 	if(tri == 0)	Delaunay(Subdiv, ConvexHull);
 	else	 __tri = *tri;
 	__nTriangles = __tri.size();// get the number of triangles
-	
+
 	//secondly: build correspondence of Vertex-Triangle
 	if(buildVtri)	FindVTri();
-	
+
 	//Thirdly: build pixel point in all triangles
 	if(tri == 0) CalcPixelPoint(rect, ConvexHull);
 	else FastCalcPixelPoint(rect);
@@ -131,7 +131,7 @@ void AAM_PAW::Delaunay(const CvSubdiv2D* Subdiv, const CvMat* ConvexHull)
 	std::vector<std::vector<int> > edges;
 	std::vector<int> one_edge;     one_edge.resize(2);
 	std::vector<int> one_tri;	one_tri.resize(3);
-	int ind1, ind2;			
+	int ind1, ind2;
 
     cvStartReadSeq( (CvSeq*)(Subdiv->edges), &reader, 0 );
     for(i = 0; i < Subdiv->edges->total; i++)
@@ -177,7 +177,7 @@ void AAM_PAW::Delaunay(const CvSubdiv2D* Subdiv, const CvMat* ConvexHull)
 
         for (int j = 0; j < __n; j++)
         {
-            // At most, there are only 2 triangles that can be added 
+            // At most, there are only 2 triangles that can be added
             if(AAM_PAW::IsEdgeIn(ind1, j, edges) && AAM_PAW::IsEdgeIn(ind2, j, edges) )
             {
                 one_tri[0] = ind1;
@@ -190,7 +190,7 @@ void AAM_PAW::Delaunay(const CvSubdiv2D* Subdiv, const CvMat* ConvexHull)
             }
         }
     }
-	
+
 	//OK, up to now, we have already builded the triangles!
 }
 
@@ -200,7 +200,7 @@ bool AAM_PAW::IsEdgeIn(int ind1, int ind2,
 {
     for (int i = 0; i < edges.size (); i++)
 	{
-        if ((edges[i][0] == ind1 && edges[i][1] == ind2) || 
+        if ((edges[i][0] == ind1 && edges[i][1] == ind2) ||
 			(edges[i][0] == ind2 && edges[i][1] == ind1) )
 			return true;
 	}
@@ -209,7 +209,7 @@ bool AAM_PAW::IsEdgeIn(int ind1, int ind2,
 }
 
 //============================================================================
-bool AAM_PAW::IsTriangleNotIn(const std::vector<int>& one_tri, 
+bool AAM_PAW::IsTriangleNotIn(const std::vector<int>& one_tri,
 						   const std::vector<std::vector<int> > &tris)
 {
 	std::set<int> tTriangle;
@@ -241,14 +241,14 @@ void AAM_PAW::CalcPixelPoint(const CvRect rect, CvMat* ConvexHull)//cost too muc
 	int ind1, ind2, ind3;
 	int ii, jj;
 	double x, y, x1, y1, x2, y2, x3, y3, c;
-	
+
 	__xmin = rect.x;
 	__ymin = rect.y;
 	__width = rect.width;
 	__height = rect.height;
 	int left = rect.x, right = left + __width;
 	int top = rect.y, bottom = top + __height;
-	
+
 	__rect.resize(__height);
 	for (int i = top; i < bottom; i++)
     {
@@ -274,13 +274,13 @@ void AAM_PAW::CalcPixelPoint(const CvRect rect, CvMat* ConvexHull)//cost too muc
                    point[0] = __referenceshape[ind1];
                    point[1] = __referenceshape[ind2];
                    point[2] = __referenceshape[ind3];
-					
+
 					// secondly: the point(j,i) is located in the k-th triangle
 					if(cvPointPolygonTest(&tempVert, pt, 0) >= 0)
 					{
                         __rect[ii][jj] = ll++;
 						__pixTri.push_back(k);
-						
+
 						// calculate alpha and belta for warp
 						x = j;		 y = i;
 						x1 = point[0].x; y1 = point[0].y;
@@ -290,8 +290,8 @@ void AAM_PAW::CalcPixelPoint(const CvRect rect, CvMat* ConvexHull)//cost too muc
 						c = 1.0/(+x2*y3-x2*y1-x1*y3-x3*y2+x3*y1+x1*y2);
 						alpha = (y*x3-y3*x+x*y2-x2*y+x2*y3-x3*y2)*c;
 						belta = (-y*x3+x1*y+x3*y1+y3*x-x1*y3-x*y1)*c;
-						gamma = 1 - alpha - belta; 
-						
+						gamma = 1 - alpha - belta;
+
 						__alpha.push_back(alpha);
 						__belta.push_back(belta);
 						__gamma.push_back(gamma);
@@ -338,8 +338,8 @@ int AAM_PAW::FastFillConvexPoly(CvPoint2D32f pts[3], void* data)
     int delta1, delta2;
     int ycount = 0;
     one_edge* idx = (one_edge*)data;
-    
-    delta1 = delta2 = XY_ONE >> 1;    
+
+    delta1 = delta2 = XY_ONE >> 1;
 
     p0 = v[npts - 1];
     p0.x <<= XY_SHIFT - shift;
@@ -369,7 +369,7 @@ int AAM_PAW::FastFillConvexPoly(CvPoint2D32f pts[3], void* data)
         pt0.y = p0.y >> XY_SHIFT;
         pt1.x = p.x >> XY_SHIFT;
         pt1.y = p.y >> XY_SHIFT;
-        
+
 		p0 = p;
     }
 
@@ -468,25 +468,25 @@ void AAM_PAW::FastCalcPixelPoint(const CvRect rect)
 	int x, y;
 	double x1, y1, x2, y2, x3, y3, c;
 	struct one_edge* idx = NULL;
-	
+
 	__xmin = rect.x;			__ymin = rect.y;
 	__width = rect.width+1;		__height = rect.height+1;
 	int left = rect.x, top = rect.y;
 	int aa, bb, cc, dd;
 	__rect.resize(__height);
-	for(int i = 0; i < __height; i++) 
+	for(int i = 0; i < __height; i++)
 	{
 		__rect[i].resize(__width);
 		for(int j = 0; j < __width; j++)
 			__rect[i][j] = -1;
 	}
-	
+
 	for(int k = 0; k < __nTriangles; ++k)
 	{
 		ind1 = __tri[k][0];
 		ind2 = __tri[k][1];
 		ind3 = __tri[k][2];
-		
+
 		point[0] = __referenceshape[ind1];
 		point[1] = __referenceshape[ind2];
 		point[2] = __referenceshape[ind3];
@@ -512,8 +512,8 @@ void AAM_PAW::FastCalcPixelPoint(const CvRect rect)
 
 				alpha = (y*(x3-x2)+x2*y3-x3*y2+x*(y2-y3))*c;
 				belta = (y*(x1-x3)+x3*y1-x1*y3+(y3-y1)*x)*c;
-				gamma = 1 - alpha - belta; 
-				
+				gamma = 1 - alpha - belta;
+
 				__alpha.push_back(alpha);
 				__belta.push_back(belta);
 				__gamma.push_back(gamma);
@@ -542,8 +542,8 @@ void AAM_PAW::FastCalcPixelPoint(const CvRect rect)
 					//belta = (-y*x3+x1*y+x3*y1+y3*x-x1*y3-x*y1)*c;
 					alpha = (y*(x3-x2)+x2*y3-x3*y2+x*(y2-y3))*c;
 					belta = (y*(x1-x3)+x3*y1-x1*y3+(y3-y1)*x)*c;
-					gamma = 1 - alpha - belta; 
-					
+					gamma = 1 - alpha - belta;
+
 					__alpha.push_back(alpha);
 					__belta.push_back(belta);
 					__gamma.push_back(gamma);
@@ -572,25 +572,25 @@ void AAM_PAW::FindVTri()
 
 //============================================================================
 void AAM_PAW::CalcWarpParameters(double x, double y, double x1, double y1,
-		double x2, double y2, double x3, double y3, 
+		double x2, double y2, double x3, double y3,
 		double &alpha, double &belta, double &gamma)
 {
 	double c = (+x2*y3-x2*y1-x1*y3-x3*y2+x3*y1+x1*y2);
     alpha = (y*x3-y3*x+x*y2-x2*y+x2*y3-x3*y2) / c;
     belta  = (-y*x3+x1*y+x3*y1+y3*x-x1*y3-x*y1) / c;
-    gamma = 1 - alpha - belta; 
+    gamma = 1 - alpha - belta;
 }
 
 //============================================================================
-void AAM_PAW::Warp(double x, double y, 
-				   double x1, double y1, double x2, double y2, double x3, double y3, 
-				   double& X, double& Y, 
+void AAM_PAW::Warp(double x, double y,
+				   double x1, double y1, double x2, double y2, double x3, double y3,
+				   double& X, double& Y,
 				   double X1, double Y1, double X2, double Y2, double X3, double Y3)
 {
 	double c = 1.0/(+x2*y3-x2*y1-x1*y3-x3*y2+x3*y1+x1*y2);
     double alpha = (y*x3-y3*x+x*y2-x2*y+x2*y3-x3*y2)*c;
     double belta  = (-y*x3+x1*y+x3*y1+y3*x-x1*y3-x*y1)*c;
-    double gamma = 1.0 - alpha - belta; 
+    double gamma = 1.0 - alpha - belta;
 
 	X = alpha*X1 + belta*X2 + gamma*X3;
 	Y = alpha*Y1 + belta*Y2 + gamma*Y3;
@@ -651,6 +651,7 @@ void AAM_PAW::CalcWarpTexture(const CvMat* s, const IplImage* image, CvMat* t)co
 	char* imgdata = image->imageData;
 	int step = image->widthStep;
 	int nchannel = image->nChannels;
+
 	if(nchannel == 4)
 	{
 		for(int i = 0, k = 0; i < __nPixels; i++, k+=3)
@@ -660,9 +661,9 @@ void AAM_PAW::CalcWarpTexture(const CvMat* s, const IplImage* image, CvMat* t)co
 			v2 = __tri[tri_idx][1];
 			v3 = __tri[tri_idx][2];
 
-			x = __alpha[i]*ss[v1<<1] + __belta[i]*ss[v2<<1] + 
+			x = __alpha[i]*ss[v1<<1] + __belta[i]*ss[v2<<1] +
 				__gamma[i]*ss[v3<<1];
-			y = __alpha[i]*ss[1+(v1<<1)] + __belta[i]*ss[1+(v2<<1)] + 
+			y = __alpha[i]*ss[1+(v1<<1)] + __belta[i]*ss[1+(v2<<1)] +
 				__gamma[i]*ss[1+(v3<<1)];
 
 			X = cvFloor(x);		Y = cvFloor(y);
@@ -679,26 +680,25 @@ void AAM_PAW::CalcWarpTexture(const CvMat* s, const IplImage* image, CvMat* t)co
 
 	int off_g = (nchannel == 3) ? 1 : 0;
 	int off_r = (nchannel == 3) ? 2 : 0;
-	
+
 	for(int i = 0, k = 0; i < __nPixels; i++, k+=3)
 	{
 		tri_idx = __pixTri[i];
 		v1 = __tri[tri_idx][0];
 		v2 = __tri[tri_idx][1];
 		v3 = __tri[tri_idx][2];
-
-		x = __alpha[i]*ss[v1<<1] + __belta[i]*ss[v2<<1] + 
+		x = __alpha[i]*ss[v1<<1] + __belta[i]*ss[v2<<1] +
 			__gamma[i]*ss[v3<<1];
-		y = __alpha[i]*ss[1+(v1<<1)] + __belta[i]*ss[1+(v2<<1)] + 
+		y = __alpha[i]*ss[1+(v1<<1)] + __belta[i]*ss[1+(v2<<1)] +
 			__gamma[i]*ss[1+(v3<<1)];
 
 #ifdef BINLINEAR
 		X = cvFloor(x);	Y = cvFloor(y);	X1 = cvCeil(x);	Y1 = cvCeil(y);
 		s0 = x-X;		t0 = y-Y;		s1 = 1-s0;		t1 = 1-t0;
 
-		ixB1 = nchannel*X; ixG1= ixB1+off_g;	ixR1 = ixB1+off_r;	
-		ixB2 = nchannel*X1;	ixG2= ixB2+off_g;	ixR2 = ixB2+off_r;	
-		
+		ixB1 = nchannel*X; ixG1= ixB1+off_g;	ixR1 = ixB1+off_r;
+		ixB2 = nchannel*X1;	ixG2= ixB2+off_g;	ixR2 = ixB2+off_r;
+
 		p1 = (byte*)(imgdata + step*Y);
 		p2 = (byte*)(imgdata + step*Y1);
 /*
@@ -734,7 +734,7 @@ void AAM_PAW::CalcWarpTexture(const CvMat* s, const IplImage* image, CvMat* t)co
 void AAM_PAW::Write(std::ofstream& os)
 {
 	int i, j;
-	
+
 	os.write((char*)&__n, sizeof(int));
 	os.write((char*)&__nTriangles, sizeof(int));
 	os.write((char*)&__nPixels, sizeof(int));
@@ -749,7 +749,7 @@ void AAM_PAW::Write(std::ofstream& os)
 		os.write((char*)&__tri[i][1], sizeof(int));
 		os.write((char*)&__tri[i][2], sizeof(int));
 	}
-	
+
 	for(i = 0; i < __vtri.size(); i++)
 	{
 		int ii = __vtri[i].size();
@@ -761,7 +761,7 @@ void AAM_PAW::Write(std::ofstream& os)
 	}
 
 	for(i = 0; i < __nPixels; i++)	os.write((char*)&__pixTri[i], sizeof(int));
-	
+
 	for(i = 0; i < __nPixels; i++)	os.write((char*)&__alpha[i], sizeof(double));
 
 	for(i = 0; i < __nPixels; i++)	os.write((char*)&__belta[i], sizeof(double));
@@ -773,7 +773,7 @@ void AAM_PAW::Write(std::ofstream& os)
 		for(j = 0; j < __width; j++)
 			os.write((char*)&__rect[i][j], sizeof(int));
 	}
-	
+
 	__referenceshape.Write(os);
 }
 
@@ -787,7 +787,7 @@ void AAM_PAW::Read(std::ifstream& is)
 	is.read((char*)&__ymin, sizeof(int));
 	is.read((char*)&__width, sizeof(int));
 	is.read((char*)&__height, sizeof(int));
-	
+
 	__tri.resize(__nTriangles);
 	for(i = 0; i < __nTriangles; i++)
 	{
@@ -800,7 +800,7 @@ void AAM_PAW::Read(std::ifstream& is)
 	__vtri.resize(__n);
 	for(i = 0; i < __n; i++)
 	{
-		int ii; 
+		int ii;
 		is.read((char*)&ii, sizeof(int));
 		__vtri[i].resize(ii);
 		for( j = 0; j < ii; j++)	is.read((char*)&__vtri[i][j], sizeof(int));
@@ -808,23 +808,23 @@ void AAM_PAW::Read(std::ifstream& is)
 
 	__pixTri.resize(__nPixels);
 	for(i = 0;  i < __nPixels; i++)	is.read((char*)&__pixTri[i], sizeof(int));
-	
+
 	__alpha.resize(__nPixels);
 	for(i = 0; i < __nPixels; i++)	is.read((char*)&__alpha[i], sizeof(double));
 
 	__belta.resize(__nPixels);
 	for(i = 0; i < __nPixels; i++)	is.read((char*)&__belta[i], sizeof(double));
-	
+
 	__gamma.resize(__nPixels);
 	for(i = 0; i < __nPixels; i++)	is.read((char*)&__gamma[i], sizeof(double));
-	
+
 	__rect.resize(__height);
 	for(i = 0; i < __height; i++)
 	{
 		__rect[i].resize(__width);
 		for(j = 0; j < __width; j++) is.read((char*)&__rect[i][j], sizeof(int));
 	}
-	
+
 	__referenceshape.resize(__n);
 	__referenceshape.Read(is);
 }

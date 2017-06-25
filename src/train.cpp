@@ -32,12 +32,11 @@ int main(int argc, char** argv)
 
 	AAM_Pyramid model;
 	model.Build(ptsFiles, imgFiles, 0, 16);
+	// model.ReadModel(argv[4]);
+	VJfacedetect facedet;
+	facedet.LoadCascade("../resources/haarcascade_frontalface_alt2.xml");
+	model.BuildDetectMapping(ptsFiles, imgFiles, facedet);
 
-  // ofstream os(argv[4], ios::out | ios::binary);
-	// if(!os){
-	// 	LOGW("ERROR(%s, %d): CANNOT create model \"%s\"\n", __FILE__, __LINE__, argv[4]);
-	// 	return false;
-	// }
 	model.WriteModel(argv[4]);
 
 	return 0;
