@@ -30,20 +30,7 @@ int main(int argc, char** argv)
 		exit(0);
 	}
 
-<<<<<<< HEAD
-	VJfacedetect facedet;
-	facedet.LoadCascade("../resources/haarcascade_frontalface_alt2.xml");
-	AAM_Pyramid model;
-	model.Build(ptsFiles, imgFiles, 0, atoi(argv[5]));
-	model.BuildDetectMapping(ptsFiles, imgFiles, facedet);
 
-
-  ofstream os(argv[4], ios::out | ios::binary);
-	if(!os){
-		LOGW("ERROR(%s, %d): CANNOT create model \"%s\"\n", __FILE__, __LINE__, argv[4]);
-		return false;
-	}
-=======
 	AAM_Pyramid model;
 	model.Build(ptsFiles, imgFiles, 0, 16);
 
@@ -52,7 +39,6 @@ int main(int argc, char** argv)
 	// 	LOGW("ERROR(%s, %d): CANNOT create model \"%s\"\n", __FILE__, __LINE__, argv[4]);
 	// 	return false;
 	// }
->>>>>>> ParallelFitting
 	model.WriteModel(argv[4]);
 
 	return 0;

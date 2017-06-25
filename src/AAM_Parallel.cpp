@@ -18,7 +18,7 @@
 #define CVMAT_ELEM(Mat, i, j) CV_MAT_ELEM(*Mat, double, i,j)
 #define MAX_CHANNELS 4
 #define CHUNK 8
-#define BIGCHUNK 16
+#define BIGCHUNK 4
 
 using namespace std;
 
@@ -205,7 +205,7 @@ void AAM_Parallel::Fit(IplImage* image, AAM_Shape& shape, ofstream& out, int max
 	}
 
 	if (out && out.is_open()){
-		out << __model->__texture.nPixels()<<","<< gettime-t << ","<<error <<"\n";
+		out << __model->__texture.nPixels()<<","<< gettime-t << ","<<error <<","<< iter <<"\n";
 		cout << "\tFitted..." << "Pixels: "<< __model->__texture.nPixels()<<", Time: "<< gettime-t << "ms, Error: "<< error << endl;
 	}
 

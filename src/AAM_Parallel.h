@@ -46,8 +46,10 @@ private:
   void ParamsUpdate(IplImage* image);
   void ComputeNewParams(double k, double* __c, double* __q);
 
-private:
+public:
   AAM_Pyramid __modelP;
+private:
+
   AAM_CAM* __model;
   CvMat* __R;
 
