@@ -87,7 +87,7 @@ int main(int argc, char** argv)
 		AAM_Shape Shape;
 		ofstream out;
 		AAM_Pyramid pyramid_model;
-		bool flag = flag = pyramid_model.InitShapeFromDetBox(Shape, facedet, image);
+		bool flag = flag = model.__modelP.InitShapeFromDetBox(Shape, facedet, image);
 
 		if(flag == false) {
 			fprintf(stderr, "The image doesn't contain any faces\n");
@@ -99,12 +99,12 @@ int main(int argc, char** argv)
 		cvNamedWindow("Original");
 		cvShowImage("Original", image);
 
-		model.Fit(image, Shape, out, 1000, false);
+		model.Fit(image, Shape, out, 1000, false, 0.003);
 		model.Draw(image);
 
 		cvNamedWindow("Fitting");
 		cvShowImage("Fitting", image);
-		cvWaitKey(0);
+		// cvWaitKey(0);
 
 		cvReleaseImage(&image);
 	}
