@@ -58,7 +58,7 @@ void AAM_Parallel::FitAll(file_lists images, string outfile, int max_frames, int
 		cout << "ERROR: Result file couldn't be opened"<< endl;
 	}
 
-	cout << "Max threads: " << omp_get_num_procs()<<endl;
+	cout << "Max System threads: " << omp_get_num_procs()<<endl;
 
 	cout << "Starting evaluation fitting.. "<< images.size() << " images\n";
 	cout << "Fitting maximum " << frames << " frames"<< endl;
@@ -66,11 +66,13 @@ void AAM_Parallel::FitAll(file_lists images, string outfile, int max_frames, int
 
 	cout << "===========================================================" << endl;
 
-	cout << "Parallel evaluation..." << omp_get_max_threads() << " Threads..."<<endl;
-	output << "Parallel,"<< omp_get_max_threads() << ",threads\n";
+
+
+	cout << "Parallel evaluation... " << omp_get_max_threads() << " threads..."<< endl;
+	output << "Parallel: ,"<< omp_get_max_threads() <<",threads\n";
 	output << "layer,frame,nPixels,time,error\n";
 
-	omp_set_num_threads(omp_get_max_threads());
+
 	for (int j = 0; j < layers; j++){
 		SetModel(j); // set the model to the jth layer
 
