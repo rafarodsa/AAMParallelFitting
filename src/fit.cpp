@@ -34,52 +34,9 @@ int main(int argc, char** argv)
 	strcpy(filename, argv[2]);
 	cout << "Layers: "<< model.GetNumLayers() << endl;
 
-// 	if(strstr(filename, ".avi"))
-// 	{
-// 		AAM_MovieAVI aviIn;
-// 		AAM_Shape Shape;
-// 		IplImage* image2 = 0;
-// 		bool flag = false;
-//
-// 		aviIn.Open(filename);
-// 		cvNamedWindow("Video",1);
-// 		cvNamedWindow("AAMFitting",1);
-//
-// 		for(int j = 0; j < aviIn.FrameCount(); j ++)
-// 		{
-// 			printf("Tracking frame %04i: ", j);
-//
-// 			IplImage* image = aviIn.ReadFrame(j);
-//
-// 			if(j == 0 || flag == false)
-// 			{
-// 				flag = model.InitShapeFromDetBox(Shape, facedet, image);
-// 				if(flag == false) goto show;
-// 			}
-//
-// 			flag = model.Fit(image, Shape, 30, false);
-// 			if(image2 == 0) image2 = cvCreateImage(cvGetSize(image), image->depth, image->nChannels);
-// 			cvZero(image2);
-// 			model.Draw(image2, Shape, 2);
-// 			cvShowImage("AAMFitting", image2);
-// show:
-// 			cvShowImage("Video", image);
-// 			cvWaitKey(1);
-// 		}
-// 		cvReleaseImage(&image2);
-// 	}
-//
-// 	else
+
 	{
 		IplImage* image = cvLoadImage(filename, -1);
-
-		// AAM_Shape Shape;
-		// bool flag = flag = model.InitShapeFromDetBox(Shape, facedet, image);
-		// if(flag == false) {
-		// 	fprintf(stderr, "The image doesn't contain any faces\n");
-		// 	exit(0);
-		// }
-
 
 		VJfacedetect facedet;
 		facedet.LoadCascade("../resources/haarcascade_frontalface_alt2.xml");
@@ -104,7 +61,7 @@ int main(int argc, char** argv)
 
 		cvNamedWindow("Fitting");
 		cvShowImage("Fitting", image);
-		// cvWaitKey(0);
+		cvWaitKey(0);
 
 		cvReleaseImage(&image);
 	}

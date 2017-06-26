@@ -115,21 +115,11 @@ void AAM_Parallel::Fit(IplImage* image, AAM_Shape& shape, ofstream& out, int max
 	CvMat __sampledTexture = cvMat(1, __model->__texture.nPixels(), CV_64FC1, __texture);
 	CvMat __cMat = cvMat(1,__model->nModes(),CV_64FC1, __c);
 
-	// VJfacedetect facedet;
-	// facedet.LoadCascade("haarcascade_frontalface_alt2.xml");
-	// cout << "Classifier file loaded" << endl;
-	// bool flag = flag = __modelP.InitShapeFromDetBox(shape, facedet, image);
-	// if(flag == false) {
-	// 	fprintf(stderr, "The image doesn't contain any faces\n");
-	// 	exit(0);
-	// }
-	// else
-
 
 	shape.Point2Mat(__s);
 	cout << "shape to mat..." <<endl;
 	AAM_Common::CheckShape(__s, image->width, image->height);
-	//shape parameter
+
 	__model->__shape.CalcParams(__s, __p, &__qMat);
 	cout << "starting shape..." <<endl;
 	//texture parameter
@@ -216,15 +206,6 @@ void AAM_Parallel::Fit(IplImage* image, AAM_Shape& shape, ofstream& out, int max
 }
 
 bool AAM_Parallel::Read(const std::string& filename) {
-	// ifstream input(filename.c_str(), ios::in | ios::binary);
-	//
-	// if (!input) {
-	// 	fprintf(stderr, "Cannot load model %s", filename.c_str());
-	// 	return false;
-	// }
-	// __model->Read(input);
-	// __R = cvCreateMat(__model->nModes()+4, __model->__texture.nPixels(), CV_64FC1);
-	// ReadCvMat(input, __R);
 
 	__modelP.ReadModel(filename);
 
