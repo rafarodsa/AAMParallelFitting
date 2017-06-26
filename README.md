@@ -5,6 +5,10 @@ This implementation was based on the AAM Library of GreatYao: https://github.com
 and the parallel fitting algorithm was based on the parallel algorithm designed in "Efficient parallel
 Implementation of Active Appeareance Model Fitting Algorithm on GPU" by Wang, Ma, Zhu et Sun for CUDA; in this project adapted to OpenMP
 
+## Implementation
+
+The parallel implementation can be found in __AAM_Parallel.c/.h__
+
 ## Dependencies
 - opencv 1.0 or later
 - cmake 2.6 or later
